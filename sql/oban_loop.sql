@@ -4,7 +4,7 @@ DECLARE
   opts json;
   lkey bigint := 1235711000000000000;
 BEGIN
-  -- auto-migrate
+  PERFORM oban_migrate();
 
   LOOP
     IF pg_try_advisory_lock(lkey) THEN
