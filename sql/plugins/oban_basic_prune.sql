@@ -1,22 +1,22 @@
-CREATE OR REPLACE PROCEDURE oban_basic_prune(INOUT opts json) AS $PROC$
-DECLARE
+create or replace procedure oban_basic_prune(inout opts json) as $proc$
+declare
   pruned_count int;
-BEGIN
-  DELETE FROM oban_jobs oj0
-  WHERE oj0.id IN (
-    SELECT id
-    FROM oban_jobs oj1
-    WHERE oj1.state IN ('completed', 'cancelled', 'discarded')
-      AND (
-        oj1.attempted_at < now() - (opts->>'interval')::interval
-        OR
-        oj1.cancelled_at < now() - (opts->>'interval')::interval
+begin
+  delete from oban_jobs outer_jobs
+  where outer_jobs.id in (
+    select id
+    from oban_jobs inner_jobs
+    where inner_jobs.state in ('completed', 'cancelled', 'discarded')
+      and (
+        inner_jobs.attempted_at < now() - (opts->>'interval')::interval
+        or
+        inner_jobs.cancelled_at < now() - (opts->>'interval')::interval
       )
   );
 
-  GET DIAGNOSTICS pruned_count = ROW_COUNT;
+  get diagnostics pruned_count = row_count;
 
-  RAISE INFO 'Pruned % jobs', pruned_count;
-END $PROC$
-LANGUAGE plpgsql
-SET search_path FROM CURRENT;
+  raise info 'pruned % jobs', pruned_count;
+end $proc$
+language plpgsql
+set search_path from current;

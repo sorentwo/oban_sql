@@ -1,25 +1,25 @@
-CREATE OR REPLACE FUNCTION oban_migrate() RETURNS int[] AS $FUNC$
-DECLARE
+create or replace function oban_migrate() returns int[] as $func$
+declare
   version int := 0;
   current int := 1;
-  updates int[] := ARRAY[1];
+  updates int[] := array[1];
   cur_idx int;
-BEGIN
+begin
   version := oban_migration_version();
 
-  CASE
-  WHEN version IS NULL THEN updates := updates;
-  WHEN version < current THEN updates := updates[version:current];
-  ELSE RETURN ARRAY[]::int[];
-  END CASE;
+  case
+  when version is null then updates := updates;
+  when version < current then updates := updates[version:current];
+  else return array[]::int[];
+  end case;
 
-  FOREACH cur_idx IN ARRAY updates LOOP
-    EXECUTE 'CALL ' || 'oban_migration_' || lpad(cur_idx::text, 2, '0') || '()';
+  foreach cur_idx in array updates loop
+    execute 'call ' || 'oban_migration_' || lpad(cur_idx::text, 2, '0') || '()';
 
-    PERFORM oban_migration_version(cur_idx);
-  END LOOP;
+    perform oban_migration_version(cur_idx);
+  end loop;
 
-  RETURN updates;
-END $FUNC$
-LANGUAGE plpgsql
-SET search_path FROM CURRENT;
+  return updates;
+end $func$
+language plpgsql
+set search_path from current;

@@ -1,23 +1,23 @@
-CREATE OR REPLACE FUNCTION oban_loop(conf jsonb) RETURNS void AS $FUNC$
-DECLARE
+create or replace function oban_loop(conf jsonb) returns void as $func$
+declare
   name text;
   opts json;
   lkey bigint := 1235711000000000000;
-BEGIN
-  PERFORM oban_migrate();
+begin
+  perform oban_migrate();
 
-  LOOP
-    IF pg_try_advisory_lock(lkey) THEN
-      -- some plugins only run every minute, right? Do we need that for cron?
-      FOR name, opts IN SELECT * FROM jsonb_each(conf->'plugins') LOOP
-        EXECUTE format('CALL %I($1)', name) USING opts;
-      END LOOP;
+  loop
+    if pg_try_advisory_lock(lkey) then
+      -- some plugins only run every minute, right? do we need that for cron?
+      for name, opts in select * from jsonb_each(conf->'plugins') loop
+        execute format('call %i($1)', name) using opts;
+      end loop;
 
-      PERFORM pg_advisory_unlock(lkey);
-    END IF;
+      perform pg_advisory_unlock(lkey);
+    end if;
 
-    PERFORM pg_sleep(1);
-  END LOOP;
-END $FUNC$
-LANGUAGE plpgsql
-SET search_path FROM CURRENT;
+    perform pg_sleep(1);
+  end loop;
+end $func$
+language plpgsql
+set search_path from current;
