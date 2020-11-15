@@ -8,7 +8,7 @@
   -- args? (maybe by keys)
 -- compute a lock
 
-create or replace function oban_insert(
+create or replace function oban_insert_job(
   queue text,
   worker text,
   args jsonb = '{}',
