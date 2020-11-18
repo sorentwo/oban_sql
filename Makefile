@@ -1,4 +1,5 @@
 OUTPUT := dst/oban.sql
+TEST_DB := oban_sql_test
 
 .PHONY: deps
 deps:
@@ -12,22 +13,27 @@ deps:
 
 .PHONY: test_delete
 test_delete:
-	@ dropdb oban_sql_test
+	@ dropdb $(TEST_DB)
 	@ echo "==> Oban test database dropped"
 
 .PHONY: test_create
 test_create:
-	@ createdb oban_sql_test
-	@ psql oban_sql_test -X --quiet -c 'CREATE EXTENSION pgtap;'
+	@ createdb $(TEST_DB)
+	@ psql $(TEST_DB) -X --quiet -c 'CREATE EXTENSION pgtap;'
 	@ echo "==> Oban test database created"
 
 .PHONY: test_install
 test_install: compile
-	@ psql oban_sql_test -X --quiet -f $(OUTPUT)
+	@ psql $(TEST_DB) -X --quiet -f $(OUTPUT)
 	@ echo "==> Oban installed in test database"
 
 .PHONY: test_reset
 test_reset: test_delete test_create test_install
+
+.PHONY: test
+test:
+	@ echo "==> Running tests..."
+	@ psql -d $(TEST_DB) -Xf test/oban_sanity_test.sql
 
 # Compilation
 

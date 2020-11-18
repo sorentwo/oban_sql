@@ -3,7 +3,7 @@ returns setof oban_jobs as $func$
 declare
   demand int;
 begin
-  select (meta->'limit')::int - array_length(consumed_ids, 1)
+  select (meta->'limit')::int - coalesce(array_length(consumed_ids, 1), 0)
   from oban_consumers as cons
   where cons.node = oban_fetch_jobs.node
     and cons.name = oban_fetch_jobs.name
@@ -22,7 +22,7 @@ begin
       from oban_jobs as jobs
       where jobs.state = 'available'
         and jobs.queue = oban_fetch_jobs.queue
-      order by jobs.priority asc, jobs.scheduled_at asc, jobs.id asc
+      order by jobs.priority asc, jobs.scheduled_at asc, jobs.id desc
       limit demand
       for update skip locked
     )
