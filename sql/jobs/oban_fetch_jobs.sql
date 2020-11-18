@@ -15,7 +15,7 @@ begin
   return query with updated_jobs as (
     update oban_jobs
        set state = 'executing',
-           attempted_at = timezone('utc', now()),
+           attempted_at = utc_now(),
            attempt = attempt + 1
     where id in (
       select id
@@ -30,7 +30,7 @@ begin
   ), updated_cons as (
     update oban_consumers as cons
        set consumed_ids = consumed_ids || array(select id from updated_jobs),
-           updated_at = timezone('utc', now())
+           updated_at = utc_now()
     where cons.node = oban_fetch_jobs.node
       and cons.name = oban_fetch_jobs.name
       and cons.queue = oban_fetch_jobs.queue

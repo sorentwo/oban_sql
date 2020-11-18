@@ -1,5 +1,7 @@
 create or replace procedure oban_migration_01() as $proc$
 begin
+  create extension if not exists pgcrypto;
+
   create type oban_job_state as enum (
     'available',
     'scheduled',
@@ -12,11 +14,12 @@ begin
 
   create table if not exists oban_jobs (
     id bigserial primary key,
+    state oban_job_state default 'available'::oban_job_state not null,
     queue text not null,
     worker text not null,
     args jsonb default '{}'::jsonb not null,
     meta jsonb default '{}'::jsonb not null,
-    state oban_job_state default 'available'::oban_job_state not null,
+    errors jsonb default '[]'::jsonb not null,
     priority int default 0 not null,
     attempt int default 0 not null,
     max_attempts int default 20 not null,
@@ -55,5 +58,8 @@ begin
     constraint nonce_length check (char_length(nonce) > 0),
     constraint queue_length check (char_length(queue) > 0)
   );
+
+  create index if not exists oban_consumers_consumed_ids_index
+    on oban_consumers using gin (consumed_ids);
 end $proc$
 language plpgsql;

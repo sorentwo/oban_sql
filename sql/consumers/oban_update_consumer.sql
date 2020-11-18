@@ -14,7 +14,7 @@ declare
 begin
   update oban_consumers as cons
      set meta = cons.meta || oban_update_consumer.meta,
-         updated_at = timezone('utc', now())
+         updated_at = utc_now()
   where cons.node = oban_update_consumer.node
     and cons.name = oban_update_consumer.name
     and cons.queue = oban_update_consumer.queue

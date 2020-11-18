@@ -4,8 +4,6 @@ declare
   opts json;
   lkey bigint := 1235711000000000000;
 begin
-  perform oban_migrate();
-
   loop
     if pg_try_advisory_lock(lkey) then
       -- some plugins only run every minute, right? do we need that for cron?

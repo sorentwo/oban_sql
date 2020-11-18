@@ -24,10 +24,10 @@ declare
   unique_lkey bigint;
 begin
   if scheduled_at is null then
-    state := 'available'
-    scheduled_at := timezone('utc'::text, now());
+    state := 'available';
+    scheduled_at := utc_now();
   else
-    state := 'scheduled'
+    state := 'scheduled';
   end if;
 
   if meta ? 'unique' then
@@ -38,7 +38,9 @@ begin
     unique_lkey := trunc(txid_current() * random() * 10000000)::bigint;
   end if;
 
-  if pg_try_advisory_xact_lock(unique_lkey) and execute unique_query then
+  -- and execute unique_query
+
+  if pg_try_advisory_xact_lock(unique_lkey) then
     insert into oban_jobs (queue, worker, args, meta, priority, max_attempts, state, scheduled_at)
     values (queue, worker, args, meta, priority, max_attempts, state, scheduled_at)
     on conflict do nothing
