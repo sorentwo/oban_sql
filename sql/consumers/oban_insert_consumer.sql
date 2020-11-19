@@ -8,14 +8,11 @@ create or replace function oban_insert_consumer(
   meta jsonb
 ) returns oban_consumers as $func$
 declare
-  nonce text;
   consumer oban_consumers;
 begin
-  nonce := encode(gen_random_bytes(12), 'base64');
-
   insert
-  into oban_consumers (node, name, queue, nonce, meta)
-  values (node, name, queue, nonce, meta)
+  into oban_consumers (node, name, queue, meta)
+  values (node, name, queue, meta)
   returning *
   into consumer;
 

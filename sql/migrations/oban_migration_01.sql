@@ -1,6 +1,8 @@
 create or replace procedure oban_migration_01() as $proc$
 begin
-  create extension if not exists pgcrypto;
+  -- extensions may be installed in any schema, but only one can exist at a time. By ensuring
+  -- pgcrypto is installed in the public schema we can safely call it from any function.
+  create extension if not exists pgcrypto schema public;
 
   create type oban_job_state as enum (
     'available',
@@ -42,20 +44,17 @@ begin
     on oban_jobs (state, queue, priority, scheduled_at, id);
 
   create table if not exists oban_consumers (
+    id uuid primary key default gen_random_uuid(),
     node text not null,
     name text not null,
     queue text not null,
-    nonce text not null,
     meta jsonb not null,
     consumed_ids bigint[] default '{}'::bigint[] not null,
     started_at timestamp without time zone default timezone('utc', now()) not null,
     updated_at timestamp without time zone default timezone('utc', now()) not null,
 
-    primary key (node, name, queue, nonce),
-
     constraint node_length check (char_length(node) > 0),
     constraint name_length check (char_length(name) > 0),
-    constraint nonce_length check (char_length(nonce) > 0),
     constraint queue_length check (char_length(queue) > 0)
   );
 

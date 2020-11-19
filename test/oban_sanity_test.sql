@@ -37,15 +37,14 @@ select has_function('oban_ack_job', array['bigint'], 'oban_ack_job is defined');
 do $$
 begin
 perform oban_insert_consumer('web.1', 'Oban', 'alpha', '{"limit":2}');
-perform oban_insert_consumer('web.1', 'Oban', 'gamma', '{"limit":3}');
-perform oban_insert_consumer('web.2', 'Oban', 'alpha', '{"limit":2}');
-perform oban_insert_consumer('web.2', 'Oban', 'gamma', '{"limit":3}');
-update oban_consumers set nonce = 'abcdef'; -- force a known static nonce
+perform oban_insert_consumer('web.2', 'Oban', 'alpha', '{"limit":3}');
+perform oban_insert_consumer('web.3', 'Oban', 'gamma', '{"limit":2}');
+perform oban_insert_consumer('web.4', 'Oban', 'gamma', '{"limit":3}');
 end $$;
 
 select set_eq(
   'select distinct node from oban_consumers',
-  array['web.1', 'web.2'],
+  array['web.1', 'web.2', 'web.3', 'web.4'],
   'oban_consumers are inserted'
 );
 
@@ -67,19 +66,19 @@ select set_eq(
 );
 
 select set_eq(
-  $$ select worker from oban_fetch_jobs('web.1', 'Oban', 'alpha', 'abcdef') $$,
+  $$ select worker from oban_fetch_jobs((select id from oban_consumers where node = 'web.1')) $$,
   array['Worker.A', 'Worker.B'],
   'jobs are fetched up to the consumer limit'
 );
 
 select set_eq(
-  $$ select worker from oban_fetch_jobs('web.2', 'Oban', 'alpha', 'abcdef') $$,
+  $$ select worker from oban_fetch_jobs((select id from oban_consumers where node = 'web.2')) $$,
   array['Worker.C'],
   'consumed jobs are not fetched again'
 );
 
 select set_eq(
-  $$ select worker from oban_fetch_jobs('web.2', 'Oban', 'gamma', 'abcdef') $$,
+  $$ select worker from oban_fetch_jobs((select id from oban_consumers where node = 'web.3')) $$,
   array['Worker.D'],
   'scheduled jobs are not fetched'
 );
