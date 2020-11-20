@@ -15,7 +15,7 @@ begin
   returning *
   into job;
 
-  if job is not null then
+  if found then
     perform oban_release_job(id);
   end if;
 

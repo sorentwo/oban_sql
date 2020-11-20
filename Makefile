@@ -33,7 +33,7 @@ test_reset: test_delete test_create test_install
 .PHONY: test
 test:
 	@ echo "==> Running tests..."
-	@ psql -d $(TEST_DB) -Xf test/oban_sanity_test.sql
+	@ psql -d $(TEST_DB) -Xf test/oban_test.sql
 
 # Compilation
 

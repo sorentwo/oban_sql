@@ -1,4 +1,5 @@
-create or replace function oban_release_job(id bigint) returns void as $func$
+create or replace function oban_release_job(id bigint)
+returns void as $func$
 begin
   update oban_consumers as cons
   set consumed_ids = array_remove(cons.consumed_ids, oban_release_job.id)
