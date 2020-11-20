@@ -13,9 +13,11 @@
 \ir consumers/oban_insert_consumer_test.sql
 \ir consumers/oban_keepalive_consumer_test.sql
 \ir consumers/oban_update_consumer_test.sql
-\ir jobs/oban_insert_job_test.sql
-\ir jobs/oban_fetch_jobs_test.sql
 \ir jobs/oban_ack_job_test.sql
+\ir jobs/oban_discard_job_test.sql
+\ir jobs/oban_error_job_test.sql
+\ir jobs/oban_fetch_jobs_test.sql
+\ir jobs/oban_insert_job_test.sql
 \ir jobs/oban_retry_job_test.sql
 
 select * from runtests('^oban_.+_test');

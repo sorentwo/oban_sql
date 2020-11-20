@@ -43,7 +43,7 @@ begin
   create index if not exists oban_jobs_state_queue_priority_scheduled_at_id_index
     on oban_jobs (state, queue, priority, scheduled_at, id);
 
-  create table if not exists oban_consumers (
+  create unlogged table if not exists oban_consumers (
     id uuid primary key default gen_random_uuid(),
     node text not null,
     name text not null,

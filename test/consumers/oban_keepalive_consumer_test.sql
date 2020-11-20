@@ -5,9 +5,9 @@ declare
 begin
   select id from oban_insert_consumer('web.1', 'Oban', 'alpha', '{"limit":2}') into consumer_id;
 
-  return next results_eq(
+  return next set_eq(
     format('select updated_at from oban_keepalive_consumer(''%s'')', consumer_id),
-    $$ values (utc_now()) $$,
+    array[utc_now()],
     'oban_consumers timestamp is updated'
   );
 end;
