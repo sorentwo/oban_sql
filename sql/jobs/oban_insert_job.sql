@@ -49,7 +49,7 @@ begin
   end if;
 
   if job is not null then
-    perform pg_notify('oban_insert', json_build_object('queue', job.queue)::text);
+    perform oban_notify('oban_insert', json_build_object('queue', job.queue));
   end if;
 
   return job;

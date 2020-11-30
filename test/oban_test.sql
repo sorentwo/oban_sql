@@ -10,6 +10,7 @@
 
 \ir oban_installation_test.sql
 \ir oban_migration_test.sql
+\ir oban_notify_test.sql
 \ir consumers/oban_insert_consumer_test.sql
 \ir consumers/oban_keepalive_consumer_test.sql
 \ir consumers/oban_update_consumer_test.sql

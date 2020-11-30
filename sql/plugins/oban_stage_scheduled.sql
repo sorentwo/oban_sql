@@ -11,7 +11,7 @@ begin
       returning oj.queue
     ) select distinct(updated.queue) from updated
   loop
-    perform pg_notify('oban_insert', json_build_object('queue', queue)::text);
+    perform oban_notify('oban_insert', json_build_object('queue', queue));
   end loop;
 
   get diagnostics staged_count = row_count;

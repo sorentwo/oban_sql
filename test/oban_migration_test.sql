@@ -11,5 +11,5 @@ begin
   );
 
   return next has_extension('pgcrypto');
-end;
-$$ language plpgsql;
+end $$
+language plpgsql;
