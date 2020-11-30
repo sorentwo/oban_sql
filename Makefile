@@ -31,7 +31,7 @@ test_install: compile
 test_reset: test_delete test_create test_install
 
 .PHONY: test
-test:
+test: test_reset
 	@ echo "==> Running tests..."
 	@ psql -d $(TEST_DB) -Xf test/oban_test.sql
 
