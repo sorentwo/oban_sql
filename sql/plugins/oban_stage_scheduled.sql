@@ -16,7 +16,7 @@ begin
 
   get diagnostics staged_count = row_count;
 
-  raise info 'staged % jobs', staged_count;
+  raise info 'oban_stage_scheduled: staged % jobs', staged_count;
 end $proc$
 language plpgsql
 set search_path from current;

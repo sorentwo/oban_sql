@@ -20,5 +20,7 @@
 \ir jobs/oban_fetch_jobs_test.sql
 \ir jobs/oban_insert_job_test.sql
 \ir jobs/oban_retry_job_test.sql
+\ir plugins/oban_prune_consumers_test.sql
+\ir plugins/oban_prune_jobs_test.sql
 
 select * from runtests('^oban_.+_test');
