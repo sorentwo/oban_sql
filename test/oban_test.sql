@@ -14,6 +14,7 @@
 \ir consumers/oban_insert_consumer_test.sql
 \ir consumers/oban_keepalive_consumer_test.sql
 \ir consumers/oban_update_consumer_test.sql
+\ir cron/oban_parse_cron_test.sql
 \ir jobs/oban_ack_job_test.sql
 \ir jobs/oban_cancel_job_test.sql
 \ir jobs/oban_discard_job_test.sql
