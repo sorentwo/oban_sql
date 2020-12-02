@@ -1,11 +1,11 @@
-/*
- * Start the core oban loop, which runs plugin procedures in an infinite timed loop.
- *
- * Plugins are specified as `name` => `opts` pairs, where the name is a loaded procedure and the
- * opts are a JSON object. The structure of opts is flexible and plugin dependent, except for a
- * standard `interval` option. Intervals are specified in seconds, which determines how frequently
- * a plugin is invoked, at most once per second.
-*/
+--
+-- Start the core oban loop, which runs plugin procedures in an infinite timed loop.
+--
+-- Plugins are specified as `name` => `opts` pairs, where the name is a loaded procedure and the
+-- opts are a JSON object. The structure of opts is flexible and plugin dependent, except for a
+-- standard `interval` option. Intervals are specified in seconds, which determines how frequently
+-- a plugin is invoked, at most once per second.
+--
 create or replace function oban_loop(conf jsonb) returns void as $func$
 declare
   name text;

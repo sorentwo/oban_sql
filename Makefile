@@ -24,7 +24,7 @@ test_create:
 
 .PHONY: test_install
 test_install: compile
-	@ psql $(TEST_DB) -X --quiet -f $(OUTPUT)
+	@ psql $(TEST_DB) -v ON_ERROR_STOP=1 -X --quiet -f $(OUTPUT)
 	@ echo "==> Oban installed in test database"
 
 .PHONY: test_reset
@@ -42,13 +42,14 @@ SQL_FILES = sql/boot/oban_boot_prefix.sql \
 						$(wildcard sql/migrations/*.sql) \
 						sql/boot/oban_boot_migrate.sql \
 						$(wildcard sql/consumers/*.sql) \
+						$(wildcard sql/cron/*.sql) \
 						$(wildcard sql/jobs/*.sql) \
 						$(wildcard sql/plugins/*.sql) \
 						sql/boot/oban_boot_suffix.sql
 
 compile: $(SQL_FILES)
 	@ mkdir -p dst
-	@ cat $(SQL_FILES) > $(OUTPUT)
+	@ cat $(SQL_FILES) | sed '/^[[:blank:]]*--/d' > $(OUTPUT)
 	@ echo "==> Oban compiled";
 
 .PHONY: clean

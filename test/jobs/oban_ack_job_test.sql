@@ -12,8 +12,8 @@ begin
   perform oban_fetch_jobs(consumer_id);
 
   return next results_eq(
-    format('select state, completed_at from oban_ack_job(%s)', job_1_id),
-    $$ values ('completed'::oban_job_state, utc_now()) $$,
+    format('select state::text, completed_at from oban_ack_job(%s)', job_1_id),
+    $$ values ('completed', utc_now()) $$,
     'acking a job marks it complete'
   );
 
