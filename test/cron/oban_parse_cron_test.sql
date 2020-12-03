@@ -77,5 +77,20 @@ begin
     '[0,2,3]'::jsonb,
     'day of the week literals are translated'
   );
+
+  -- assert nickname parsing
+
+  return next is(
+    oban_parse_cron('@yearly'),
+    '{"day": [1], "hour": [0], "month": [1], "minute": [0], "dow": [0,1,2,3,4,5,6]}'::jsonb,
+    '@ prefixed nicknames are translated and parsed'
+  );
+
+  return next is((oban_parse_cron('@annually'))->'month', '[1]'::jsonb);
+  return next is((oban_parse_cron('@monthly'))->'day', '[1]'::jsonb);
+  return next is((oban_parse_cron('@weekly'))->'dow', '[0]'::jsonb);
+  return next is((oban_parse_cron('@daily'))->'hour', '[0]'::jsonb);
+  return next is((oban_parse_cron('@midnight'))->'hour', '[0]'::jsonb);
+  return next is((oban_parse_cron('@hourly'))->'minute', '[0]'::jsonb);
 end $func$
 language plpgsql;

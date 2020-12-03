@@ -45,15 +45,24 @@ language plpgsql
 immutable
 set search_path from current;
 
-create or replace function oban_translate_literals(expr text, names text[], off int)
+--
+-- Translate common month shorthand into a numerical value.
+--
+create or replace function oban_translate_month(expr text)
 returns text as $func$
-declare
-  str text;
-  idx int;
 begin
-  for str, idx in select * from unnest(names) with ordinality loop
-    expr := replace(expr, str, (idx - off)::text);
-  end loop;
+  expr := replace(expr, 'JAN', '1');
+  expr := replace(expr, 'FEB', '2');
+  expr := replace(expr, 'MAR', '3');
+  expr := replace(expr, 'APR', '4');
+  expr := replace(expr, 'MAY', '5');
+  expr := replace(expr, 'JUN', '6');
+  expr := replace(expr, 'JUL', '7');
+  expr := replace(expr, 'AUG', '8');
+  expr := replace(expr, 'SEP', '9');
+  expr := replace(expr, 'OCT', '10');
+  expr := replace(expr, 'NOV', '11');
+  expr := replace(expr, 'DEC', '12');
 
   return expr;
 end $func$
@@ -61,21 +70,70 @@ language plpgsql
 immutable
 set search_path from current;
 
+--
+-- Translate common day of the week shorthand into a numerical value.
+--
+create or replace function oban_translate_dow(expr text)
+returns text as $func$
+begin
+  expr := replace(expr, 'SUN', '0');
+  expr := replace(expr, 'MON', '1');
+  expr := replace(expr, 'TUE', '2');
+  expr := replace(expr, 'WED', '3');
+  expr := replace(expr, 'THU', '4');
+  expr := replace(expr, 'FRI', '5');
+  expr := replace(expr, 'SAT', '6');
+
+  return expr;
+end $func$
+language plpgsql
+immutable
+set search_path from current;
+
+--
+-- Translate common cron nicknames into common expressions. The following are supported:
+--
+-- @yearly: Run once a year, "0 0 1 1 *".
+-- @annually: same as @yearly
+-- @monthly: Run once a month, "0 0 1 * *".
+-- @weekly: Run once a week, "0 0 * * 0".
+-- @daily: Run once a day, "0 0 * * *".
+-- @midnight: same as @daily
+-- @hourly: Run once an hour, "0 * * * *".
+--
+create or replace function oban_translate_nickname(expr text)
+returns text as $func$
+begin
+  expr := replace(expr, '@yearly', '0 0 1 1 *');
+  expr := replace(expr, '@annually', '0 0 1 1 *');
+  expr := replace(expr, '@monthly', '0 0 1 * *');
+  expr := replace(expr, '@weekly', '0 0 * * 0');
+  expr := replace(expr, '@daily', '0 0 * * *');
+  expr := replace(expr, '@midnight', '0 0 * * *');
+  expr := replace(expr, '@hourly', '0 * * * *');
+
+  return expr;
+end $func$
+language plpgsql
+immutable
+set search_path from current;
+
+--
+-- Parse cron expressions into a map of time keys (minute, hour, etc) and value lists.
+--
 create or replace function oban_parse_cron(expr text)
 returns jsonb as $func$
 declare
   parts text[];
-  month_names text[] := '{JAN, FEB, MAR, APR, MAY, JUN, JUL, AUG, SEP, OCT, NOV, DEC}'::text[];
-  dow_names text[] := '{SUN, MON, TUE, WED, THU, FRI, SAT}'::text[];
 begin
-  select arr into parts from regexp_split_to_array(expr, '\s+') arr;
+  select * into parts from regexp_split_to_array(oban_translate_nickname(expr), '\s+');
 
   return jsonb_build_object(
     'minute', oban_parse_cron_expr(parts[1], 0, 59),
     'hour', oban_parse_cron_expr(parts[2], 0, 23),
     'day', oban_parse_cron_expr(parts[3], 1, 31),
-    'month', oban_parse_cron_expr(oban_translate_literals(parts[4], month_names, 0), 1, 12),
-    'dow', oban_parse_cron_expr(oban_translate_literals(parts[5], dow_names, 1), 0, 6)
+    'month', oban_parse_cron_expr(oban_translate_month(parts[4]), 1, 12),
+    'dow', oban_parse_cron_expr(oban_translate_dow(parts[5]), 0, 6)
   );
 end $func$
 language plpgsql
