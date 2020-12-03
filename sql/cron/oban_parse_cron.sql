@@ -29,7 +29,7 @@ begin
   from unnest(acc) as arr(elem)
   into rmin, rmax;
 
-  if acc[1] < vmin then
+  if rmin < vmin then
     raise 'cron value is too low: % (%-%)', rmin, vmin, vmax using errcode = 22000;
   elsif rmax > vmax then
     raise 'cron value is too high: % (%-%)', rmax, vmin, vmax using errcode = 22000;
@@ -45,19 +45,37 @@ language plpgsql
 immutable
 set search_path from current;
 
+create or replace function oban_translate_literals(expr text, names text[], off int)
+returns text as $func$
+declare
+  str text;
+  idx int;
+begin
+  for str, idx in select * from unnest(names) with ordinality loop
+    expr := replace(expr, str, (idx - off)::text);
+  end loop;
+
+  return expr;
+end $func$
+language plpgsql
+immutable
+set search_path from current;
+
 create or replace function oban_parse_cron(expr text)
 returns jsonb as $func$
 declare
   parts text[];
+  month_names text[] := '{JAN, FEB, MAR, APR, MAY, JUN, JUL, AUG, SEP, OCT, NOV, DEC}'::text[];
+  dow_names text[] := '{SUN, MON, TUE, WED, THU, FRI, SAT}'::text[];
 begin
   select arr into parts from regexp_split_to_array(expr, '\s+') arr;
 
   return jsonb_build_object(
-    'minutes', oban_parse_cron_expr(parts[1], 0, 59),
-    'hours', oban_parse_cron_expr(parts[2], 0, 23),
-    'days', oban_parse_cron_expr(parts[3], 1, 31),
-    'months', oban_parse_cron_expr(parts[4], 1, 12),
-    'weekdays', oban_parse_cron_expr(parts[5], 1, 7)
+    'minute', oban_parse_cron_expr(parts[1], 0, 59),
+    'hour', oban_parse_cron_expr(parts[2], 0, 23),
+    'day', oban_parse_cron_expr(parts[3], 1, 31),
+    'month', oban_parse_cron_expr(oban_translate_literals(parts[4], month_names, 0), 1, 12),
+    'dow', oban_parse_cron_expr(oban_translate_literals(parts[5], dow_names, 1), 0, 6)
   );
 end $func$
 language plpgsql
