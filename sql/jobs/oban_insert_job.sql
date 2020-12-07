@@ -1,4 +1,17 @@
-create or replace function oban_unique_fetch(queue text, worker text, args jsonb, meta jsonb)
+--
+-- Fetch an existing job based on uniqueness criteria.
+--
+-- The possible unique criterion are:
+--
+--   * period - the number of seconds to search since a matching job was inserted. The value must
+--     be a positive integer or -1, which represents infinity.
+--   * fields - a list of fields to consider when matching, one or more of "args", "queue", or
+--     "worker".
+--   * states - a list of `oban_job_states` to consider when matching.
+--   * keys - a list of keys to extract from the args map. When provided, only the subset of args
+--     are considered when matching.
+--
+create or replace function oban_unique_fetch(queue text, worker text, args jsonb, uniq jsonb)
 returns oban_jobs as $func$
 declare
   query text;
@@ -10,53 +23,49 @@ declare
   default_fields jsonb := '["args", "queue", "worker"]';
   default_period jsonb := '60';
   default_states jsonb := '["scheduled", "available", "executing", "retryable", "completed"]';
+  infinite_period jsonb := '-1';
 begin
-  if meta ? 'unique' then
-    keys := coalesce(meta #> '{unique,keys}', '[]');
-    fields := coalesce(meta #> '{unique,fields}', default_fields);
-    period := coalesce(meta #> '{unique,period}', default_period);
-    states := coalesce(meta #> '{unique,states}', default_states);
-
-    query := $_$ select * from oban_jobs where true $_$;
-
-    query := query || format(
-      $_$ and inserted_at > utc_now() - '%s seconds'::interval $_$,
-      period
-    );
-
-    query := query || format(
-      $_$ and state = any (select elem::oban_job_state from jsonb_array_elements_text('%s') elem) $_$,
-      states
-    );
-
-    if jsonb_array_length(keys) > 0 then
-      select jsonb_object_agg(key, value) from jsonb_each(args) where keys ? key into args;
-    end if;
-
-    if fields ? 'args' then
-      query := query || format($_$ and args @> '%s' $_$, args);
-    end if;
-
-    if fields ? 'queue' then
-      query := query || format($_$ and queue = '%s' $_$, queue);
-    end if;
-
-    if fields ? 'worker' then
-      query := query || format($_$ and worker = '%s' $_$, worker);
-    end if;
-
-    query := query || $_$ order by id limit 1 $_$;
-
-    execute query into job;
-
-    return job;
-  else
+  if uniq is null then
     return null;
   end if;
+
+  keys := coalesce(uniq -> 'keys', '[]');
+  fields := coalesce(uniq -> 'fields', default_fields);
+  period := coalesce(uniq -> 'period', default_period);
+  states := coalesce(uniq -> 'states', default_states);
+
+  query := format($_$
+    select * from oban_jobs
+    where state = any (select elem::oban_job_state from jsonb_array_elements_text('%s') elem)
+  $_$, states);
+
+  if period <> infinite_period then
+    query := query || format($_$ and inserted_at > utc_now() - '%s seconds'::interval $_$, period);
+  end if;
+
+  if fields ? 'args' then
+    query := query || format($_$ and args @> '%s' $_$, jsonb_take(args, keys));
+  end if;
+
+  if fields ? 'queue' then
+    query := query || format($_$ and queue = '%s' $_$, queue);
+  end if;
+
+  if fields ? 'worker' then
+    query := query || format($_$ and worker = '%s' $_$, worker);
+  end if;
+
+  query := query || $_$ order by id limit 1 $_$;
+
+  execute query into job;
+
+  return job;
 end $func$
 language plpgsql
 set search_path from current;
 
+--
+-- Try to take an advisory lock for unique job insertion.
 --
 -- Dynamic uniqueness doesn't rely on an index. To prevent concurrent inserts we use an advisory
 -- lock around the uniqueness scan and job insertion. The lock is composed from the queue, worker,
@@ -99,7 +108,7 @@ begin
   end if;
 
   if oban_unique_lock(queue, worker, args, meta) then
-    job := oban_unique_fetch(queue, worker, args, meta);
+    job := oban_unique_fetch(queue, worker, args, meta->'unique');
 
     if job.id is not null then
       return job;

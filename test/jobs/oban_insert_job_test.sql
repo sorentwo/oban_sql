@@ -144,5 +144,11 @@ begin
     array[100],
     'insert is allowed after the period'
   );
+
+  return next set_eq(
+    $$ select id from oban_insert_job('alpha', 'Worker.B', '{}', '{"unique": {"period": -1}}') $$,
+    array[101],
+    'an infinite period is unique across all jobs'
+  );
 end
 $func$ language plpgsql;
