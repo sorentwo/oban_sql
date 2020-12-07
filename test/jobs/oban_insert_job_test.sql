@@ -64,10 +64,16 @@ begin
     array[100],
     'insert is allowed with mismatched worker and args'
   );
+
+  return next set_eq(
+    $$ select locktype from pg_locks where locktype = 'advisory' $$,
+    array['advisory'],
+    'transactional advisory locks are taken'
+  );
 end
 $func$ language plpgsql;
 
-create or replace function oban_unique_fields_test()
+create or replace function oban_unique_keys_test()
 returns setof text as $func$
 begin
   insert into oban_jobs (id, queue, worker, args) values

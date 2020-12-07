@@ -71,16 +71,37 @@ set search_path from current;
 -- lock around the uniqueness scan and job insertion. The lock is composed from the queue, worker,
 -- and args (only some args if `keys` is provided).
 --
-create or replace function oban_unique_lock(queue text, worker text, args jsonb, meta jsonb)
+create or replace function oban_unique_lock(queue text, worker text, args jsonb, uniq jsonb)
 returns boolean as $func$
 declare
+  -- Advisory locks are global, across schemas. If the schema isn't included we may block
+  -- concurrent inserts across schemas.
+  buffer text := current_schema();
+  key bigint;
 begin
-  if meta ? 'unique' then
-    -- abs(('x' || md5('what-the-heck-now'))::bit(64)::bigint)
-    return pg_try_advisory_xact_lock(1::bigint);
-  else
+  if uniq is null then
     return true;
   end if;
+
+  if uniq ? 'states' then
+    buffer := buffer || (uniq->>'states');
+  end if;
+
+  if uniq->'fields' ? 'args' then
+    buffer := buffer || jsonb_take(args, coalesce(uniq->'keys', '[]'))::text;
+  end if;
+
+  if uniq->'fields' ? 'queue' then
+    buffer := buffer || queue;
+  end if;
+
+  if uniq->'fields' ? 'worker' then
+    buffer := buffer || worker;
+  end if;
+
+  key := abs(('x' || md5(buffer))::bit(64)::bigint);
+
+  return pg_try_advisory_xact_lock(key);
 end $func$
 language plpgsql
 set search_path from current;
@@ -107,7 +128,7 @@ begin
     state := 'scheduled';
   end if;
 
-  if oban_unique_lock(queue, worker, args, meta) then
+  if oban_unique_lock(queue, worker, args, meta->'unique') then
     job := oban_unique_fetch(queue, worker, args, meta->'unique');
 
     if job.id is not null then
