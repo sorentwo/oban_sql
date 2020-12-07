@@ -6,4 +6,4 @@
 
   select jsonb_set(manifest, format('{%s}', 'migration')::text[], released_migration::text::jsonb) into manifest;
   execute format('comment on table oban_jobs is ''%s''', manifest::text);
-END $$
+end $$

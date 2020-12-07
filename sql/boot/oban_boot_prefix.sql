@@ -1,11 +1,11 @@
-DO $$
-DECLARE
+do $$
+declare
   manifest jsonb;
   current_version int;
   current_migration int;
   released_version int := 1;
   released_migration int := 1;
-BEGIN
+begin
   select coalesce(obj_description(to_regclass('oban_jobs')), '{}')::jsonb into manifest;
 
   current_version := (manifest->>'version')::int;
