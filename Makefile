@@ -49,7 +49,7 @@ SQL_FILES = sql/boot/oban_boot_prefix.sql \
 
 compile: $(SQL_FILES)
 	@ mkdir -p dst
-	@ cat $(SQL_FILES) | sed '/^[[:blank:]]*--/d' > $(OUTPUT)
+	@ cat $(SQL_FILES) | sed '/^[[:blank:]]*--/d' | tr '\n' ' ' | tr -s ' ' > $(OUTPUT)
 	@ echo "==> Oban compiled";
 
 .PHONY: clean
