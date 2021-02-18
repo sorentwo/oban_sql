@@ -1,3 +1,7 @@
+-- NOTE:
+-- Use more details for advisory lock, it only has the period
+-- Release the lock manually, don't use xact
+
 --
 -- Fetch an existing job based on uniqueness criteria.
 --
@@ -129,11 +133,14 @@ begin
   end if;
 
   if oban_unique_lock(queue, worker, args, meta->'unique') then
+    raise info 'has lock';
     job := oban_unique_fetch(queue, worker, args, meta->'unique');
 
     if job.id is not null then
       return job;
     end if;
+
+    raise info 'job not found';
 
     insert into oban_jobs (queue, worker, args, meta, priority, max_attempts, state, scheduled_at)
     values (queue, worker, args, meta, priority, max_attempts, state, scheduled_at)

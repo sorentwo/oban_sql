@@ -9,7 +9,7 @@
 create or replace function oban_loop(conf jsonb) returns void as $func$
 declare
   name text;
-  opts json;
+  opts jsonb;
   iter int := 0;
   lkey bigint := 1235711000000000000;
 begin

@@ -42,9 +42,6 @@ begin
     $$ values ('alpha') $$,
     'cron only inserts for expressions that evaluate to now'
   );
-
-  -- test using an alternate time zone
-  -- test unique preventing dupes
 end $func$
 language plpgsql;
 
@@ -72,7 +69,7 @@ begin
 end $func$
 language plpgsql;
 
-create or replace function oban_cron_timezone_test()
+create or replace function oban_cron_duplicate_test()
 returns setof text as $func$
 begin
   return next lives_ok($$
@@ -92,5 +89,18 @@ begin
     array[1],
     'default uniquness prevents duplicate inserts in the same minute'
   );
+end $func$
+language plpgsql;
+
+create or replace function oban_cron_reboot_test()
+returns setof text as $func$
+declare
+  opts jsonb;
+begin
+  return next lives_ok($$
+    call oban_cron_scheduler('{
+      "table": [{"expr": "@reboot", "worker": "Worker.A", "queue": "alpha", "opts": {}}]
+    }')
+  $$);
 end $func$
 language plpgsql;

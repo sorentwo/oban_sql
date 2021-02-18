@@ -1,4 +1,4 @@
-create or replace procedure oban_prune_jobs(inout opts json) as $proc$
+create or replace procedure oban_prune_jobs(inout opts jsonb) as $proc$
 declare
   ttl interval;
   pruned_count int;
